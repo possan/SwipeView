@@ -23,6 +23,7 @@ body {
 
 #wrapper > div > div > div {
 	padding:20px;
+	border: 1px solid #555;
 	-webkit-transition-duration:.4s;
 	-webkit-transition-property:opacity;
 }

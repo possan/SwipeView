@@ -33,6 +33,9 @@ var SwipeView = (function(){
 			this.wrapper.style.overflow = 'hidden';
 			this.wrapper.style.position = 'relative';
 			
+			this.topmult = this.options.vertical ? 1.0 : 0.0;
+			this.leftmult = this.options.vertical ? 0.0 : 1.0;
+			
 			this.masterPages = [];
 			
 			div = document.createElement('div');
@@ -46,9 +49,8 @@ var SwipeView = (function(){
 			for (i=-1; i<2; i++) {
 				div = document.createElement('div');
 				div.id = 'swipeview-masterpage-' + (i+1);
-				var ipct = (i*100)+'%';
-				var left = this.options.vertical ? '0%' : ipct;
-				var top = this.options.vertical ? ipct : '0%';
+				var left = (this.leftmult * i*100) + '%';
+				var top = (this.topmult * i*100) + '%';
 				div.style.cssText = '-webkit-transform:translateZ(0);position:absolute;height:100%;width:100%;left:'+left+';top:'+top;
 				if (!div.dataset) div.dataset = {};
 				pageIndex = i == -1 ? this.options.numberOfPages - 1 : i;
@@ -75,6 +77,7 @@ var SwipeView = (function(){
 		currentMasterPage: 1,
 		x: 0,
 		y: 0,
+		pos: 0,
 		page: 0,
 		pageIndex: 0,
 		customEvents: [],
@@ -116,24 +119,19 @@ var SwipeView = (function(){
 		},
 
 		refreshSize: function () {
-			this.wrapperWidth = this.wrapper.clientWidth;
-			this.wrapperHeight = this.wrapper.clientHeight;
-			this.pageWidth = this.wrapperWidth;
-			this.pageHeight = this.wrapperHeight;
-			this.maxX = -this.options.numberOfPages * this.pageWidth + this.wrapperWidth;
-			this.maxY = -this.options.numberOfPages * this.pageHeight + this.wrapperHeight;
-			var size = this.options.vertical ? this.pageHeight : this.pageWidth;
+			this.wrapperSize = this.options.vertical ? this.wrapper.clientHeight : this.wrapper.clientWidth;
+			this.pageSize = this.wrapperSize;
+			this.maxPos = -this.options.numberOfPages * this.pageSize + this.wrapperSize;			
 			this.snapThreshold = this.options.snapThreshold === null
-				? Math.round(size * .15)
+				? Math.round(this.pageSize * .15)
 				: /%/.test(this.options.snapThreshold)
-					? Math.round(size * this.options.snapThreshold.replace('%', '') / 100)
+					? Math.round(this.pageSize * this.options.snapThreshold.replace('%', '') / 100)
 					: this.options.snapThreshold;
 		},
 		
 		updatePageCount: function (n) {
 			this.options.numberOfPages = n;
-			this.maxX = -this.options.numberOfPages * this.pageWidth + this.wrapperWidth;
-			this.maxY = -this.options.numberOfPages * this.pageHeight + this.wrapperHeight;
+			this.maxPos = -this.options.numberOfPages * this.pageSize + this.wrapperSize;
 		},
 		
 		goToPage: function (p) {
@@ -151,101 +149,54 @@ var SwipeView = (function(){
 			
 			this.slider.style.webkitTransitionDuration = '0';
 			
-			if( this.options.vertical )
-				this.__pos(-p * this.pageHeight);
-			else
-				this.__pos(-p * this.pageWidth);
-
+			this.__pos(-p * this.pageSize);
+			
 			this.currentMasterPage = (this.page + 1) - Math.floor((this.page + 1) / 3) * 3;
-
 			this.masterPages[this.currentMasterPage].className = this.masterPages[this.currentMasterPage].className + ' swipeview-active';
-/*
 
-if (this.currentMasterPage == 0) {
-	this.masterPages[2].style.left = this.page * 100 - 100 + '%';
-	this.masterPages[0].style.left = this.page * 100 + '%';
-	this.masterPages[1].style.left = this.page * 100 + 100 + '%';
-	
-	this.masterPages[2].dataset.upcomingPageIndex = this.page == 0 ? this.options.numberOfPages-1 : this.page - 1;
-	this.masterPages[0].dataset.upcomingPageIndex = this.page;
-	this.masterPages[1].dataset.upcomingPageIndex = this.page == this.options.numberOfPages-1 ? 0 : this.page + 1;
-} else if (this.currentMasterPage == 1) {
-	this.masterPages[0].style.left = this.page * 100 - 100 + '%';
-	this.masterPages[1].style.left = this.page * 100 + '%';
-	this.masterPages[2].style.left = this.page * 100 + 100 + '%';
-
-	this.masterPages[0].dataset.upcomingPageIndex = this.page == 0 ? this.options.numberOfPages-1 : this.page - 1;
-	this.masterPages[1].dataset.upcomingPageIndex = this.page;
-	this.masterPages[2].dataset.upcomingPageIndex = this.page == this.options.numberOfPages-1 ? 0 : this.page + 1;
-} else {
-	this.masterPages[1].style.left = this.page * 100 - 100 + '%';
-	this.masterPages[2].style.left = this.page * 100 + '%';
-	this.masterPages[0].style.left = this.page * 100 + 100 + '%';
-
-	this.masterPages[1].dataset.upcomingPageIndex = this.page == 0 ? this.options.numberOfPages-1 : this.page - 1;
-	this.masterPages[2].dataset.upcomingPageIndex = this.page;
-	this.masterPages[0].dataset.upcomingPageIndex = this.page == this.options.numberOfPages-1 ? 0 : this.page + 1;
-}
-*/
-			var n0 = 0;
-			var n1 = 0;
-			var n2 = 0;
-				
+			var mp0,mp1,mp2;
 			if (this.currentMasterPage == 0) {
-				n0 = 2;
-				n1 = 0; 
-				n2 = 1;
+				mp0 = this.masterPages[2];
+				mp1 = this.masterPages[0];
+				mp2 = this.masterPages[1];
 			} else if (this.currentMasterPage == 1) {
-				n0 = 0;
-				n1 = 1; 
-				n2 = 2;
+				mp0 = this.masterPages[0];
+				mp1 = this.masterPages[1];
+				mp2 = this.masterPages[2];
 			} else {
-				n0 = 1;
-				n1 = 2; 
-				n2 = 0;
+				mp0 = this.masterPages[1];
+				mp1 = this.masterPages[2];
+				mp2 = this.masterPages[0];
 			}
 			
-			if( this.options.vertical ){
-				this.masterPages[n0].style.top = this.page * 100 - 100 + '%';
-				this.masterPages[n1].style.top = this.page * 100 + '%';
-				this.masterPages[n2].style.top = this.page * 100 + 100 + '%';
-			}
-			else {
-				this.masterPages[n0].style.left = this.page * 100 - 100 + '%';
-				this.masterPages[n1].style.left = this.page * 100 + '%';
-				this.masterPages[n2].style.left = this.page * 100 + 100 + '%';
-			}
-			this.masterPages[n0].dataset.upcomingPageIndex = this.page == 0 ? this.options.numberOfPages-1 : this.page - 1;
-			this.masterPages[n1].dataset.upcomingPageIndex = this.page;
-			this.masterPages[n2].dataset.upcomingPageIndex = this.page == this.options.numberOfPages-1 ? 0 : this.page + 1;
+			mp0.dataset.upcomingPageIndex = this.page == 0 ? this.options.numberOfPages-1 : this.page - 1;
+			mp0.style.top = (this.topmult * (this.page * 100 - 100)) + '%';
+			mp0.style.left = (this.leftmult * (this.page * 100 - 100)) + '%';
 			
+			mp1.dataset.upcomingPageIndex = this.page;
+			mp1.style.top = (this.topmult * this.page * 100) + '%';
+			mp1.style.left = (this.leftmult * this.page * 100) + '%';
+			
+			mp2.dataset.upcomingPageIndex = this.page == this.options.numberOfPages-1 ? 0 : this.page + 1;
+			mp2.style.top = (this.topmult * (this.page * 100 + 100)) + '%';
+			mp2.style.left = (this.leftmult * (this.page * 100 + 100)) + '%';
 			
 			this.__flip();
 		},
 		
 		next: function () {			
-			if( this.options.vertical ){
-				if (!this.options.loop && this.y == this.maxY) return;
-				this.directionY = -1;
-				this.y -= 1;
-			}else{
-				if (!this.options.loop && this.x == this.maxX) return;
-				this.directionX = -1;
-				this.x -= 1;
-			}
+			if (!this.options.loop && this.pos == this.maxPos)
+				return;
+			this.direction = -1;
+			this.pos -= 1;
 			this.__checkPosition();
 		},
 
 		prev: function () {
-			if( this.options.vertical ) {
-				if (!this.options.loop && this.y == 0) return;
-				this.directionY = 1;
-				this.y += 1;
-			}else{
-				if (!this.options.loop && this.x == 0) return;
-				this.directionX = 1;
-				this.x += 1;
-			}
+			if (!this.options.loop && this.pos == 0)
+				return;
+			this.direction = 1;
+			this.pos += 1;
 			this.__checkPosition();
 		},
 
@@ -277,12 +228,13 @@ if (this.currentMasterPage == 0) {
 		 *
 		 */
 		__pos: function (v) {
+			this.pos = v;
 			if( this.options.vertical ) {
-				this.y = v;
+				// this.y = v;
 				this.slider.style.webkitTransform = 'translate3d(0,' + v + 'px,0)';
 			}
 			else{
-				this.x = v;
+				// this.x = v;
 				this.slider.style.webkitTransform = 'translate3d(' + v + 'px,0,0)';
 			}
 		},
@@ -290,10 +242,7 @@ if (this.currentMasterPage == 0) {
 		__resize: function () {
 			this.refreshSize();
 			this.slider.style.webkitTransitionDuration = '0';
-			if( this.options.vertical )
-				this.__pos(-this.page * this.pageHeight);
-			else
-				this.__pos(-this.page * this.pageWidth);
+			this.__pos(-this.page * this.pageSize);
 		},
 
 		__start: function (e) {
@@ -312,8 +261,7 @@ if (this.currentMasterPage == 0) {
 			this.pointY = point.pageY;
 			this.stepsX = 0;
 			this.stepsY = 0;
-			this.directionX = 0;
-			this.directionY = 0;
+			this.direction = 0;
 			this.directionLocked = false;
 			
 			this.slider.style.webkitTransitionDuration = '0';
@@ -326,19 +274,22 @@ if (this.currentMasterPage == 0) {
 
 			var point = hasTouch ? e.touches[0] : e,
 				deltaX = point.pageX - this.pointX,
-				deltaY = point.pageY - this.pointY,
-				newX = this.x + deltaX,
-				newY = this.y + deltaY;
+				deltaY = point.pageY - this.pointY;
+	
+			var delta = this.options.vertical ? deltaY : deltaX;
+		
+			var newPos = this.pos + delta;
 				
-			var	dist = this.options.vertical ?
-						Math.abs(point.pageY - this.startY) :  
-						Math.abs(point.pageX - this.startX);
+			var	dist = this.options.vertical 
+				? Math.abs(point.pageY - this.startY)
+				: Math.abs(point.pageX - this.startX);
 
 			this.moved = true;
 			this.pointX = point.pageX;
 			this.pointY = point.pageY;
-			this.directionX = deltaX > 0 ? 1 : deltaX < 0 ? -1 : 0;
-			this.directionY = deltaY > 0 ? 1 : deltaY < 0 ? -1 : 0;
+
+			this.direction = delta > 0 ? 1 : delta < 0 ? -1 : 0;
+			
 			this.stepsX += Math.abs(deltaX);
 			this.stepsY += Math.abs(deltaY);
 
@@ -348,16 +299,10 @@ if (this.currentMasterPage == 0) {
 				return;
 			}
 			
-			if( this.options.vertical ){
-				// We are scrolling vertically, so skip SwipeView and give the control back to the browser
-				if (!this.directionLocked && this.stepsX > this.stepsY) {
-					this.initiated = false;
-					return;
-				}
-			}
-			else {
-				// We are scrolling vertically, so skip SwipeView and give the control back to the browser
-				if (!this.directionLocked && this.stepsY > this.stepsX) {
+			if( !this.directionLocked  ){ 
+					// We are scrolling vertically, so skip SwipeView and give the control back to the browser
+				if ((this.options.vertical && this.stepsX > this.stepsY) ||
+				    (!this.options.vertical && this.stepsY > this.stepsX)) {
 					this.initiated = false;
 					return;
 				}
@@ -366,19 +311,11 @@ if (this.currentMasterPage == 0) {
 			e.preventDefault();
 
 			this.directionLocked = true;
-			
-			if( this.options.vertical ){
-				if (!this.options.loop && (newY > 0 || newY < this.maxY)) {
-					newY = this.y + (deltaY / 2);
-				}
-			}
-			else {
-				if (!this.options.loop && (newX > 0 || newX < this.maxX)) {
-					newX = this.x + (deltaX / 2);
-				}
-			}
 
-
+			if (!this.options.loop && (newPos > 0 || newPos < this.maxPos)) {
+				newPos = this.pos + (delta / 2);
+			}
+			 
 			if (!this.thresholdExceeded && dist >= this.snapThreshold) {
 				this.thresholdExceeded = true;
 				this.__event('moveout');
@@ -387,55 +324,32 @@ if (this.currentMasterPage == 0) {
 				this.__event('movein');
 			}
 			
-			this.__pos(this.options.vertical ? newY : newX);
+			this.__pos(newPos);
 		},
 		
 		__end: function (e) {
 			if (!this.initiated) return;
 			
 			var point = hasTouch ? e.changedTouches[0] : e;
-			var dist;
-			
-			if( this.options.vertical ){
-				dist = Math.abs(point.pageY - this.startY);
-			}
-			else {
-				dist = Math.abs(point.pageX - this.startX);
-			}
+			var dist = this.options.vertical
+				? Math.abs(point.pageY - this.startY)
+				: Math.abs(point.pageX - this.startX);
 
 			this.initiated = false;
 			
 			if (!this.moved) return;
 
-			if( this.options.vertical ){
-				if (!this.options.loop && (this.y > 0 || this.y < this.maxY)) {
-					dist = 0;
-					this.__event('movein');
-				}
-
-				// Check if we exceeded the snap threshold
-				if (dist < this.snapThreshold) {
-					this.slider.style.webkitTransitionDuration = '300ms';
-					this.__pos(-this.page * this.pageHeight);
-					return;
-				}
-
-			}
-			else {
-				if (!this.options.loop && (this.x > 0 || this.x < this.maxX)) {
-					dist = 0;
-					this.__event('movein');
-				}
-
-				// Check if we exceeded the snap threshold
-				if (dist < this.snapThreshold) {
-					this.slider.style.webkitTransitionDuration = '300ms';
-					this.__pos(-this.page * this.pageWidth);
-					return;
-				}
-
+			if (!this.options.loop && (this.pos > 0 || this.pos < this.maxPos)) {
+				dist = 0;
+				this.__event('movein');
 			}
 
+			// Check if we exceeded the snap threshold
+			if (dist < this.snapThreshold) {
+				this.slider.style.webkitTransitionDuration = '300ms';
+				this.__pos(-this.page * this.pageSize);
+				return;
+			}
 
 			this.__checkPosition();
 		},
@@ -447,22 +361,11 @@ if (this.currentMasterPage == 0) {
 
 			this.masterPages[this.currentMasterPage].className = this.masterPages[this.currentMasterPage].className.replace(/(^|\s)swipeview-active(\s|$)/, '');
 					
-			var forward = false;
-			if( this.options.vertical ) {
-				forward = this.directionY > 0;
-			}
-			else {
-				forward = this.directionX > 0;
-			}
-			
+			var forward = this.direction > 0;
+
 			// Flip the page
 			if (forward) {
-				if( this.options.vertical ){
-					this.page = -Math.ceil(this.y / this.pageHeight);
-				}
-				else {
-					this.page = -Math.ceil(this.x / this.pageWidth);
-				}
+				this.page = -Math.ceil(this.pos / this.pageSize);
 
 				this.currentMasterPage = (this.page + 1) - Math.floor((this.page + 1) / 3) * 3;
 				this.pageIndex = this.pageIndex == 0 ? this.options.numberOfPages - 1 : this.pageIndex - 1;
@@ -470,22 +373,14 @@ if (this.currentMasterPage == 0) {
 				pageFlip = this.currentMasterPage - 1;
 				pageFlip = pageFlip < 0 ? 2 : pageFlip;
 
-				if( this.options.vertical ){
-					this.masterPages[pageFlip].style.top = this.page * 100 - 100 + '%';
-				}
-				else {
-					this.masterPages[pageFlip].style.left = this.page * 100 - 100 + '%';
-				}
-
+				var pprev = this.page * 100 - 100;
+				this.masterPages[pageFlip].style.top = (this.topmult * pprev) + '%';
+				this.masterPages[pageFlip].style.left = (this.leftmult * pprev) + '%';
+	
 				pageFlipIndex = this.page - 1;
 			} else {
 
-				if( this.options.vertical ){
-					this.page = -Math.floor(this.y / this.pageHeight);
-				}
-				else {
-					this.page = -Math.floor(this.x / this.pageWidth);
-				}
+				this.page = -Math.floor(this.pos / this.pageSize);
 
 				this.currentMasterPage = (this.page + 1) - Math.floor((this.page + 1) / 3) * 3;
 				this.pageIndex = this.pageIndex == this.options.numberOfPages - 1 ? 0 : this.pageIndex + 1;
@@ -493,13 +388,10 @@ if (this.currentMasterPage == 0) {
 				pageFlip = this.currentMasterPage + 1;
 				pageFlip = pageFlip > 2 ? 0 : pageFlip;
 
-				if( this.options.vertical ){
-					this.masterPages[pageFlip].style.top = this.page * 100 + 100 + '%';
-				}
-				else {
-					this.masterPages[pageFlip].style.left = this.page * 100 + 100 + '%';
-				}
-
+				var pnext = this.page * 100 + 100;
+				this.masterPages[pageFlip].style.top = (this.topmult * pnext) + '%';
+				this.masterPages[pageFlip].style.left = (this.leftmult * pnext) + '%';
+			
 				pageFlipIndex = this.page + 1;
 			}
 
@@ -515,42 +407,20 @@ if (this.currentMasterPage == 0) {
 			this.masterPages[pageFlip].dataset.upcomingPageIndex = pageFlipIndex;		// Index to be loaded in the newly flipped page
 
 			this.slider.style.webkitTransitionDuration = '500ms';
-
 			
-			if( this.options.vertical ){
+			var newPos = -this.page * this.pageSize;
 			
-				newY = -this.page * this.pageHeight;
-			
-				// Hide the next page if we decided to disable looping
-				if (!this.options.loop) {
-					this.masterPages[pageFlip].style.visibility = newY == 0 || newY == this.maxY ? 'hidden' : '';
-				}
-
-				if (this.y == newY) {
-					this.__flip();		// If we swiped all the way long to the next page (extremely rare but still)
-				} else {
-					this.__pos(newY);
-					if (this.options.hastyPageFlip) this.__flip();
-				}
+			if (!this.options.loop) {
+				this.masterPages[pageFlip].style.visibility = (newPos == 0 || newPos == this.maxPos) ? 'hidden' : '';
 			}
-			else {
 
-				newX = -this.page * this.pageWidth;
-			
-				// Hide the next page if we decided to disable looping
-				if (!this.options.loop) {
-					this.masterPages[pageFlip].style.visibility = newX == 0 || newX == this.maxX ? 'hidden' : '';
-				}
-
-				if (this.x == newX) {
-					this.__flip();		// If we swiped all the way long to the next page (extremely rare but still)
-				} else {
-					this.__pos(newX);
-					if (this.options.hastyPageFlip) this.__flip();
-				}
+			if (this.pos == newPos) {
+				this.__flip();		// If we swiped all the way long to the next page (extremely rare but still)
+			} else {
+				this.__pos(newPos);
+				if (this.options.hastyPageFlip) 
+					this.__flip();
 			}
-			
-
 		},
 		
 		__flip: function () {
