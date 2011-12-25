@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<title>SwipeView Tabloid Sample</title>
+	<link href="style.css" rel="stylesheet" type="text/css">
+	<script type="text/javascript" src="../../src/swipeview.js"></script>
+</head>
+
+<body>
+	<div id="outerwrapper">
+		<div id="wrapper">
+		</div>
+	</div>
+<script type="text/javascript">
+
+var tabloid = 
+{
+	sections: 
+	[
+		{
+			name: 'cover',
+			pages: [
+				{ filename: 'cover.jpg' },
+			],
+		},
+		{
+			name: 'section 1',
+			pages: [
+				{ filename: 'section1-1.jpg' },
+				{ filename: 'section1-2.jpg' },
+			],
+		},
+		{
+			name: 'section 2',
+			pages: [
+				{ filename: 'section2-1.jpg' },
+				{ filename: 'section2-2.jpg' },
+				{ filename: 'section2-3.jpg' },
+				{ filename: 'section2-4.jpg' },
+				{ filename: 'section2-5.jpg' },
+				{ filename: 'section2-6.jpg' },
+				{ filename: 'section2-7.jpg' },
+				{ filename: 'section2-8.jpg' },
+				{ filename: 'section2-9.jpg' },
+			],
+		},
+		{
+			name: 'section 3',
+			pages: [
+				{ filename: 'section3-1.jpg' },
+				{ filename: 'section3-2.jpg' },
+				{ filename: 'section3-3.jpg' },
+				{ filename: 'section3-4.jpg' },
+				{ filename: 'section3-5.jpg' },
+				{ filename: 'section3-6.jpg' },
+			],
+		},
+		{
+			name: 'back',
+			pages: [
+				{ filename: 'back.jpg' },
+			],
+		},
+	],
+};
+ 
+var randomColor = function(){
+	var hexstr = '79be';
+	var ret = '#';
+	ret += hexstr[ Math.round( Math.random() * hexstr.length ) ];
+	ret += hexstr[ Math.round( Math.random() * hexstr.length ) ];
+	ret += hexstr[ Math.round( Math.random() * hexstr.length ) ];
+	return ret;
+}
+
+var createSectionPage = function(root) {
+	var el = document.createElement('div');
+	el.className = 'sectionpage';
+	el.innerHTML = 'section page';
+	root.appendChild( el );
+	return el;
+}
+
+var createSection = function(np) {
+	var el = document.createElement('div');
+	el.className = 'section';
+	var ret = {
+		element: el,
+		verticalswipe: null,
+		pages: []
+	};
+	for(var k=0; k<np; k++){
+		var p = createSectionPage(el);		
+		ret.pages.push( p );
+	}
+	var root = document.getElementById('wrapper');
+	root.appendChild( el );
+	return ret;
+}
+
+var _beforeShow = function(_el, _idx) {
+	// console.log('before show page', _idx, _el.verticalswipe);
+	_el.style.backgroundColor = randomColor();
+}
+
+var _createPageForSection = function(el, idx) {
+	// console.log('create page',el,idx); 
+	var section = tabloid.sections[ idx ];
+	var el2 = document.createElement('div');
+	el2.className = 'section';
+	el.appendChild(el2);	
+	el.verticalswipe = new SwipeView(el2, {
+		numberOfPages: section.pages.length,
+		hastyPageFlip: true,
+		vertical: true,
+		loop: false,
+		dynamic: false,
+		createPage: function(_el, _idx) {
+			var page = section.pages[ _idx ];
+
+			var el3 = document.createElement('div');
+			el3.className = 'page';
+			
+			var el4 = document.createElement('img');
+			el4.setAttribute('src', page.filename);
+			el4.onselectstart = function(){ return false; };
+			el4.ondragstart = function(){ return false; };
+			el3.appendChild(el4);
+
+			el4 = document.createElement('div');
+			el4.className = 'pagename';
+			el4.innerHTML = section.name+' ['+(_idx+1)+'/'+section.pages.length+']';
+			el3.appendChild(el4);
+
+			_el.appendChild(el3);
+		},
+		beforeShow: _beforeShow
+	});	
+};
+
+var	sectionswipe = new SwipeView('#wrapper', {
+	text: 'Horizontal swipe',
+	numberOfPages: tabloid.sections.length,
+	hastyPageFlip: true,
+	loop: false,
+	dynamic: false,
+	createPage: _createPageForSection,
+	beforeShow: function(el, idx) {
+		// console.log('before show page', idx, el.verticalswipe); 
+		el.style.backgroundColor = randomColor();
+		if( typeof(el.verticalswipe) !== 'undefined' )
+		 	el.verticalswipe.goToPage(0);
+	}
+});
+
+
+
+</script>
+
+</body>
+</html>
