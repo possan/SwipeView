@@ -15,6 +15,7 @@
 		<div id="wrapper">
 		</div>
 	</div>
+	Sample content from <a href="http://www.engadget.com/2011/12/23/distro-issue-19-peter-rojas-plays-20-questions-and-zach-honig-b/">Engadget Distro</a>
 <script type="text/javascript">
 
 var tabloid = 
@@ -68,42 +69,15 @@ var tabloid =
 	],
 };
  
-var randomColor = function(){
+var randomColor = function() {
 	var hexstr = '79be';
 	var ret = '#';
-	ret += hexstr[ Math.round( Math.random() * hexstr.length ) ];
-	ret += hexstr[ Math.round( Math.random() * hexstr.length ) ];
-	ret += hexstr[ Math.round( Math.random() * hexstr.length ) ];
-	return ret;
-}
-
-var createSectionPage = function(root) {
-	var el = document.createElement('div');
-	el.className = 'sectionpage';
-	el.innerHTML = 'section page';
-	root.appendChild( el );
-	return el;
-}
-
-var createSection = function(np) {
-	var el = document.createElement('div');
-	el.className = 'section';
-	var ret = {
-		element: el,
-		verticalswipe: null,
-		pages: []
-	};
-	for(var k=0; k<np; k++){
-		var p = createSectionPage(el);		
-		ret.pages.push( p );
-	}
-	var root = document.getElementById('wrapper');
-	root.appendChild( el );
+	for( var c=0; c<6; c++ )
+		ret += hexstr[ Math.round( Math.random() * hexstr.length ) ];
 	return ret;
 }
 
 var _beforeShow = function(_el, _idx) {
-	// console.log('before show page', _idx, _el.verticalswipe);
 	_el.style.backgroundColor = randomColor();
 }
 
@@ -156,8 +130,6 @@ var	sectionswipe = new SwipeView('#wrapper', {
 		 	el.verticalswipe.goToPage(0);
 	}
 });
-
-
 
 </script>
 

@@ -5,10 +5,12 @@ body {
 	background-color: #222;
 	-webkit-user-select:none;
     -webkit-text-size-adjust:none;
-	color:#333;
+	color:#aaa;
 	font-family:helvetica;
 	font-size:12px;
-	text-align:center;
+}
+body a {
+	color:#ffa;	
 }
 
 h1 {
